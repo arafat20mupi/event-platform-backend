@@ -1,4 +1,4 @@
-import { UserRole } from "@prisma/client";
+import { UserRole, UserStatus } from "@prisma/client";
 import { z } from "zod";
 
 const createUser = z.object({
@@ -9,12 +9,12 @@ const createUser = z.object({
         name: z.string({
             error: "Name is required!",
         }),
-        bio: z.string().optional(),
-        interests: z.array(z.string()).optional(),
-        location: z.string().optional(),
-        profileImage: z.string().optional(),
-        role: z.enum([UserRole.ADMIN, UserRole.USER]),
-        status: z.enum(["ACTIVE", "INACTIVE"]),
+        contactNumber: z.string({
+            error: "Contact number is required!",
+        }).optional(),
+        address: z.string({
+            error: "Address is required",
+        }).optional(),
     }),
 });
 

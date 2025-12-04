@@ -9,6 +9,7 @@ import pick from "../../../shared/pick";
 
 const createUser = catchAsync(async (req: Request, res: Response) => {
     const result = await userService.createUser(req);
+    console.log(result);
     sendResponse(res, {
         statusCode: httpStatus.CREATED,
         success: true,

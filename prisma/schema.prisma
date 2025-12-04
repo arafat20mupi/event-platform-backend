@@ -1,16 +1,10 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
+
 datasource db {
   provider = "postgresql"
 }
-
 
 enum UserRole {
   USER
@@ -25,7 +19,7 @@ enum UserStatus {
 }
 
 model Event {
-  id              String             @id @default(uuid())
+  id              String   @id @default(uuid())
   title           String
   type            String
   description     String?
@@ -34,11 +28,11 @@ model Event {
   image           String?
   minParticipants Int?
   maxParticipants Int?
-  fee             Float              @default(0)
-  status          String             @default("OPEN")
+  fee             Float    @default(0)
+  status          String   @default("OPEN")
 
-  hostId     String
-  host       User               @relation("HostEvents", fields: [hostId], references: [id])
+  hostId String
+  host   Host?  @relation("HostEvents", fields: [hostId], references: [id])
 
   participants EventParticipant[]
   reviews      Review[]
@@ -47,19 +41,17 @@ model Event {
   updatedAt DateTime @updatedAt
 }
 
-
 model EventParticipant {
-  id        String   @id @default(uuid())
-  userId    String
-  eventId   String
-  joinedAt  DateTime @default(now())
+  id       String   @id @default(uuid())
+  userId   String
+  eventId  String
+  joinedAt DateTime @default(now())
 
   user  User  @relation(fields: [userId], references: [id])
   event Event @relation(fields: [eventId], references: [id])
 
   @@unique([userId, eventId])
 }
-
 
 model Review {
   id        String   @id @default(uuid())
@@ -76,26 +68,76 @@ model Review {
   user  User  @relation("ReviewsByUser", fields: [userId], references: [id])
 }
 
-
 model User {
-  id           String     @id @default(uuid())
-  name         String
-  email        String     @unique
-  password     String
-  role         UserRole   @default(USER)
-  bio          String?
-  interests    String[]
-  location     String?
-  profileImage String?
-  avgRating    Float      @default(0)
-  status       UserStatus @default(ACTIVE)
-  needPasswordChange Boolean   @default(true)
+  id                 String     @id @default(uuid())
+  name               String?
+  phoneNumber        String?
+  profileImage       String?
+  address            String?
+  dob                DateTime?
+  gender             String?
+  email              String     @unique
+  password           String
+  role               UserRole   @default(USER)
+  status             UserStatus @default(ACTIVE)
+  needPasswordChange Boolean    @default(false)
+  interests       String[]
 
-  hostedEvents      Event[]            @relation("HostEvents")
+  // base timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // relation to extra profiles
+  admin Admin?
+  host  Host?
+
+  // Events & Reviews relation
+
   eventParticipants EventParticipant[]
   reviewsGiven      Review[]           @relation("ReviewsByUser")
   reviewsReceived   Review[]           @relation("ReviewsForHost")
 
+  @@map("users")
+}
+
+model EventCategory {
+  id        String   @id @default(uuid())
+  name      String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Host {
+  id                String   @id @default(uuid())
+  userId            String   @unique // ১টা User = ১টা Host profile (max)
+  displayName       String
+  bio               String?
+  location          String?
+  profileImage      String?
+  avgRating         Float    @default(0)
+  totalHostedEvents Int      @default(0)
+  isVerified        Boolean  @default(false)
+  isDeleted         Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user         User    @relation(fields: [userId], references: [id])
+  hostedEvents Event[] @relation("HostEvents")
+
+  @@map("hosts")
+}
+
+model Admin {
+  id            String   @id @default(uuid())
+  userId        String   @unique // প্রতিটা user-র জন্য সর্বোচ্চ ১জন admin entry
+  name          String
+  profileImage  String?
+  contactNumber String?
+  isDeleted     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("admins")
 }

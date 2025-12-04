@@ -199,12 +199,9 @@ const getMe = async (user: any) => {
             status: true,
             createdAt: true,
             updatedAt: true,
-            bio: true,
             interests: true,
-            location: true,
             name: true,
             profileImage: true,
-            avgRating: true,
             reviewsGiven: true,
             reviewsReceived: true
         }

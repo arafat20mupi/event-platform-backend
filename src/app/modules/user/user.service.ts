@@ -13,12 +13,11 @@ import { userSearchAbleFields } from './user.constant';
 
 const createUser = async (req: Request): Promise<User> => {
   const file = req.file;
-
   if (file) {
     const uploadedProfileImage = await fileUploader.uploadToCloudinary(file);
-    // ধরে নিচ্ছি DB ফিল্ড হলো profileImage
     req.body.user.profileImage = uploadedProfileImage?.secure_url;
   }
+
 
   const hashedPassword: string = await bcrypt.hash(
     req.body.password,
@@ -77,11 +76,11 @@ const getAllFromDB = async (params: any, options: IPaginationOptions) => {
     orderBy:
       options.sortBy && options.sortOrder
         ? {
-            [options.sortBy]: options.sortOrder,
-          }
+          [options.sortBy]: options.sortOrder,
+        }
         : {
-            createdAt: 'desc',
-          },
+          createdAt: 'desc',
+        },
     select: {
       id: true,
       email: true,
@@ -89,12 +88,8 @@ const getAllFromDB = async (params: any, options: IPaginationOptions) => {
       status: true,
       createdAt: true,
       updatedAt: true,
-      interests: true,
-      location: true,
       name: true,
-      bio: true,
       profileImage: true,
-      avgRating: true,
       reviewsGiven: true,
       reviewsReceived: true,
     },
@@ -149,11 +144,7 @@ const getMyProfile = async (user: IAuthUser) => {
     },
     select: {
       name: true,
-      bio: true,
-      interests: true,
-      location: true,
       profileImage: true,
-      avgRating: true,
       reviewsGiven: true,
       reviewsReceived: true,
     },
@@ -187,11 +178,7 @@ const updateMyProfile = async (user: IAuthUser, req: Request) => {
       role: true,
       status: true,
       name: true,
-      bio: true,
-      interests: true,
-      location: true,
       profileImage: true,
-      avgRating: true,
     },
   });
 

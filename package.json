@@ -1,20 +1,21 @@
 {
-  "name": "next-blog",
+  "name": "event_platform_backend",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "db:studio": "prisma studio"
   },
   "keywords": [],
-  "author": "Next Level Web Development",
+  "author": "Arafat Islam",
   "license": "ISC",
   "type": "commonjs",
   "description": "",
   "dependencies": {
-    "@prisma/adapter-pg": "^7.0.1",
+    "@prisma/adapter-pg": "^7.1.0",
     "@prisma/client": "^7.0.1",
     "@types/node": "^24.10.1",
     "axios": "^1.13.2",
