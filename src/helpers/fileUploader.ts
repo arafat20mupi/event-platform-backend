@@ -1,62 +1,98 @@
-import multer from "multer"
-import path from "path"
-import { v2 as cloudinary } from 'cloudinary';
-import config from "../config";
-import fs from 'fs';
+// helpers/fileUploader.ts
+import { Request, Response, NextFunction, RequestHandler } from "express";
+import multer from "multer";
+import { v2 as cloudinary, UploadApiErrorResponse, UploadApiResponse } from "cloudinary";
+import streamifier from "streamifier";
+import dotenv from "dotenv";
+dotenv.config();
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, path.join(process.cwd(), '/uploads'))
-  },
-  filename: function (req, file, cb) {
-    cb(null, file.originalname)
-  }
+// --------------------------
+// MULTER MEMORY STORAGE
+// --------------------------
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
+
+// --------------------------
+// CLOUDINARY CONFIG (ENV)
+// --------------------------
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-async function uploadToCloudinary(file: Express.Multer.File) {
-    // Configuration
-    cloudinary.config({ 
-        cloud_name: config.cloudinary.cloud_name, 
-        api_key: config.cloudinary.api_key, 
-        api_secret: config.cloudinary.api_secret 
-    });
-    
-    // Upload an image
-     const uploadResult = await cloudinary.uploader
-       .upload(
-           file.path, {
-               public_id: `${file.originalname}-${Date.now()}`,
-           }
-       )
-       .catch((error) => {
-            throw error;
-       });
-       fs.unlinkSync(file.path);
-    
-    return uploadResult;
-    
-    // // Optimize delivery by resizing and applying auto-format and auto-quality
-    // const optimizeUrl = cloudinary.url(`${uploadResult?.public_id}`, {
-    //     fetch_format: 'auto',
-    //     quality: 'auto'
-    // });
-    
-    // console.log(optimizeUrl);
-    
-    // // Transform the image: auto-crop to square aspect_ratio
-    // const autoCropUrl = cloudinary.url(`${uploadResult?.public_id}`, {
-    //     crop: 'auto',
-    //     gravity: 'auto',
-    //     width: 500,
-    //     height: 500,
-    // });
-    
-    // console.log(autoCropUrl);    
+// --------------------------
+// ১) Single File Upload → Cloudinary (Promise Based)
+// --------------------------
+const uploadToCloudinary = (
+  file: Express.Multer.File
+): Promise<UploadApiResponse> => {
+  return new Promise((resolve, reject) => {
+    if (!file) return reject(new Error("No file provided for upload"));
+
+    const uploadStream = cloudinary.uploader.upload_stream(
+      (err: UploadApiErrorResponse | undefined, result: UploadApiResponse | undefined) => {
+        if (err) return reject(err);
+        if (!result) return reject(new Error("Cloudinary did not return result"));
+
+        resolve(result);
+      }
+    );
+
+    streamifier.createReadStream(file.buffer).pipe(uploadStream);
+  });
 };
 
-const upload = multer({ storage: storage });
+// --------------------------
+// ২) Middleware Version (Single Field)
+// --------------------------
+const uploadToCloudinaryMiddleware = (fieldName: string): RequestHandler => {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const anyReq = req as any;
 
+      // Support: req.file OR req.files[fieldName][0]
+      const file =
+        (req as any).file ||
+        (req.files && (req.files as any)[fieldName]?.[0]);
+
+      if (!file) {
+        return next();
+      }
+
+      const uploadStream = cloudinary.uploader.upload_stream(
+        (err: UploadApiErrorResponse | undefined, result: UploadApiResponse | undefined) => {
+          if (err) {
+            console.error("Cloudinary upload error:", err);
+            return res.status(500).json({ error: err.message });
+          }
+
+          if (!result) {
+            return res.status(500).json({ error: "Cloudinary did not return a result" });
+          }
+
+          // সফল হলে req[fieldName + "Url"] = secure_url
+          anyReq[`${fieldName}Url`] = result.secure_url;
+
+          console.log(`${fieldName} uploaded →`, result.secure_url);
+
+          next();
+        }
+      );
+
+      streamifier.createReadStream(file.buffer).pipe(uploadStream);
+    } catch (err) {
+      console.error("Cloudinary middleware error:", err);
+      res.status(500).json({ error: "Image upload failed" });
+    }
+  };
+};
+
+// --------------------------
+// EXPORTS
+// --------------------------
 export const fileUploader = {
-  upload,
-  uploadToCloudinary
-}
+  upload, // Multer middleware
+  uploadToCloudinary,
+  uploadToCloudinaryMiddleware,
+};

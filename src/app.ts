@@ -4,6 +4,8 @@ import express, { Application, NextFunction, Request, Response } from 'express';
 import httpStatus from 'http-status';
 import router from './app/routes';
 import globalErrorHandler from './app/middlewares/globalErrorHandler';
+import dotenv from "dotenv";
+dotenv.config();
 
 const app: Application = express();
 app.use(cookieParser());

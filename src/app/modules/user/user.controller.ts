@@ -18,11 +18,47 @@ const createUser = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const createAdmin = catchAsync(async (req: Request, res: Response) => {
+    const result = await userService.createAdmin(req);
+    console.log(result);
+    sendResponse(res, {
+        statusCode: httpStatus.CREATED,
+        success: true,
+        message: "Admin user created successfully!",
+        data: result,
+    });
+});
+
+const createHost = catchAsync(async (req: Request, res: Response) => {
+    const result = await userService.createHost(req);
+    console.log(result);
+    sendResponse(res, {
+        statusCode: httpStatus.CREATED,
+        success: true,
+        message: "Host user created successfully!",
+        data: result,
+    });
+});
+
 const getAllFromDB = catchAsync(async (req: Request, res: Response) => {
     const filters = pick(req.query, userFilterableFields);
     const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder'])
 
     const result = await userService.getAllFromDB(filters, options)
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Users data fetched!",
+        meta: result.meta,
+        data: result.data
+    })
+});
+const getAllHostsFromDB = catchAsync(async (req: Request, res: Response) => {
+    const filters = pick(req.query, userFilterableFields);
+    const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder'])
+
+    const result = await userService.getAllHostsFromDB(filters, options)
 
     sendResponse(res, {
         statusCode: httpStatus.OK,
@@ -78,7 +114,10 @@ const updateMyProfile = catchAsync(async (req: Request & { user?: IAuthUser }, r
 
 export const userController = {
     createUser,
+    createAdmin,
+    createHost,
     getAllFromDB,
+    getAllHostsFromDB,
     getMyProfile,
     changeProfileStatus,
     updateMyProfile,

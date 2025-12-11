@@ -30,7 +30,8 @@ model Event {
   maxParticipants Int?
   fee             Float    @default(0)
   status          String   @default("OPEN")
-
+  categoryName    String
+  category        EventCategory  @relation(fields: [categoryName], references: [name])
   hostId String
   host   Host?  @relation("HostEvents", fields: [hostId], references: [id])
 
@@ -68,6 +69,17 @@ model Review {
   user  User  @relation("ReviewsByUser", fields: [userId], references: [id])
 }
 
+
+
+model EventCategory {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  events Event[]
+}
+
 model User {
   id                 String     @id @default(uuid())
   name               String?
@@ -100,19 +112,13 @@ model User {
   @@map("users")
 }
 
-model EventCategory {
-  id        String   @id @default(uuid())
-  name      String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
 model Host {
   id                String   @id @default(uuid())
-  userId            String   @unique // ১টা User = ১টা Host profile (max)
+  email             String   @unique 
   displayName       String
   bio               String?
   location          String?
+  contactNumber     String?
   profileImage      String?
   avgRating         Float    @default(0)
   totalHostedEvents Int      @default(0)
@@ -121,7 +127,7 @@ model Host {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  user         User    @relation(fields: [userId], references: [id])
+  user User @relation(fields: [email], references: [email])
   hostedEvents Event[] @relation("HostEvents")
 
   @@map("hosts")
@@ -129,7 +135,7 @@ model Host {
 
 model Admin {
   id            String   @id @default(uuid())
-  userId        String   @unique // প্রতিটা user-র জন্য সর্বোচ্চ ১জন admin entry
+  email         String   @unique 
   name          String
   profileImage  String?
   contactNumber String?
@@ -137,7 +143,7 @@ model Admin {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [email], references: [email])
 
   @@map("admins")
 }

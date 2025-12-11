@@ -14,8 +14,29 @@ router.post(
     }
 );
 
+router.post(
+    "/create-admin",
+    fileUploader.upload.single('file'),
+    (req: Request, res: Response, next: NextFunction) => {
+        req.body = userValidation.createAdmin.parse(JSON.parse(req.body.data))
+        return userController.createAdmin(req, res, next)
+    }
+);
+
+router.post(
+    "/create-host",
+    fileUploader.upload.single('file'),
+    (req: Request, res: Response, next: NextFunction) => {
+        req.body = userValidation.createHost.parse(JSON.parse(req.body.data))
+        return userController.createHost(req, res, next)
+    }
+);
+router.get("/get-hosts", (req: Request, res: Response, next: NextFunction) => {
+    return userController.getAllHostsFromDB(req, res, next)
+});
 
 
 
+router.get("/get-users" , userController.getAllFromDB);
 
 export const userRoutes = router;
